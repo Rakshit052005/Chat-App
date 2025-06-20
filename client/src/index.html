@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Chat</title>
+</head>
+<body>
+  <div id="chatBox" style="width: 100%; height: 300px; border: 1px solid gray; overflow: auto;"></div>
+  <input type="text" id="msgInput" />
+  <button id="sendBtn">Send</button>
+
+  <script>
+    const socket = new WebSocket('ws://localhost:8080');
+    const chatBox = document.getElementById('chatBox');
+
+    socket.onopen = () => {
+      console.log('Connected to server');
+      chatBox.innerHTML += "<div><em>Connected to server</em></div>";
+    };
+
+    socket.onmessage = (event) => {
+      chatBox.innerHTML += `<div><strong>Server:</strong> ${event.data}</div>`;
+    };
+
+    socket.onerror = (err) => {
+      console.error('WebSocket error:', err);
+    };
+
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      const message = document.getElementById('msgInput').value;
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(message);
+        chatBox.innerHTML += `<div><strong>You:</strong> ${message}</div>`;
+        document.getElementById('msgInput').value = '';
+      } else {
+        alert("WebSocket is not connected.");
+      }
+    });
+  </script>
+</body>
+</html>
