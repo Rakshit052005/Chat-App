@@ -1,63 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
+const socket = new WebSocket("ws://localhost:8081");
 
-const App = () => {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const ws = useRef(null);
+socket.addEventListener("open", () => {
+  console.log("Connected to WebSocket server ✅");
+});
 
-  useEffect(() => {
-    // Connect WebSocket when component mounts
-    ws.current = new WebSocket('ws://localhost:8080');
+document.getElementById("send-button").addEventListener("click", sendMessage);
 
-    ws.current.onopen = () => {
-      console.log('WebSocket connected');
-    };
+function sendMessage() {
+  const userInput = document.getElementById("input-box").value;
 
-    ws.current.onmessage = (event) => {
-      setMessages(prev => [...prev, event.data]);
-    };
+  // Send as raw string; backend does the wrapping
+  socket.send(userInput.trim());
 
-    ws.current.onclose = () => {
-      console.log('WebSocket disconnected');
-    };
+  // UI update
+  const chatLog = document.getElementById("chat-log");
+  const msgDiv = document.createElement("div");
+  msgDiv.textContent = `🧑 You: ${userInput}`;
+  chatLog.appendChild(msgDiv);
+}
 
-    ws.current.onerror = (error) => {
-      console.error('WebSocket error', error);
-    };
-
-    // Clean up when component unmounts
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, []);
-
-  const sendMessage = () => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(input);
-      setInput('');
-    } else {
-      console.warn('WebSocket is not open.');
-    }
-  };
-
-  return (
-    <div style={{ padding: 20 }}>
-      <div style={{ height: 300, overflowY: 'scroll', border: '1px solid #ccc', marginBottom: 10 }}>
-        {messages.map((msg, index) => (
-          <div key={index}>{msg}</div>
-        ))}
-      </div>
-      <input
-        value={input}
-        onChange={e => setInput(e.target.value)}
-        placeholder="Type a message..."
-        style={{ width: '80%' }}
-      />
-      <button onClick={sendMessage}>Send</button>
-    </div>
-  );
-};
-
-export default App;
+socket.addEventListener("message", event => {
+  const chatLog = document.getElementById("chat-log");
+  const replyDiv = document.createElement("div");
+  replyDiv.textContent = `🤖 AI: ${event.data}`;
+  chatLog.appendChild(replyDiv);
+});
